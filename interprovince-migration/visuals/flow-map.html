@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Interprovince Migration in China</title>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/0.8.3/jquery.csv.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css"
+      integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
+      crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"
+      integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw=="
+      crossorigin=""></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.6.0/Tween.min.js"></script>
+    <script src="../js/CanvasFlowmapLayer.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-size: 14px;
+        font-family: Arial;
+      }
+
+      #map {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 25px;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #info {
+        position: absolute;
+        padding: 5px 10px;
+        top: 20px;
+        left: 20px;
+        width: 350px;
+        background: white;
+        text: black;
+        z-index: 999;
+        border-radius: 3px;
+      }
+
+      .leaflet-control-attribution {
+        display: none;
+      }
+
+      #info span {
+        color: #999;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.5em;
+      }
+
+      h2.province {
+        margin: 0;
+        margin-top: 10px;
+        font-size: 1.3em;
+      }
+
+      #info table {
+        width: 47%;
+        padding: 0;
+        margin: 5px 3% 0 0;
+        float: left;
+        font-size: 0.8em;
+      }
+
+      #info table tr:first-child td {
+        font-weight: bold;
+        border-bottom: 1px solid black;
+        padding-bottom: 1px;
+      }
+
+      #info table tr:nth-child(2n) td {
+        padding-top: 3px;
+      }
+
+      #info table td:nth-child(2n) {
+        text-align: right;
+      }
+    </style>
+  </head>
+
+
+  <body>
+
+    <div id="map"></div>
+    <div id="info">
+      <h1>China Interprovince Migration</h1>
+      <span>Source: China Census 2010</span>
+
+      <h2 class="province"></h2>
+
+      <table class="top-emigration" cellpadding=0 cellspacing=0>
+        <tr>
+          <td colspan=2>Top Emigration</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+        </tr>
+      </table>
+
+
+      <table class="top-immigration" cellpadding=0 cellspacing=0>
+        <tr>
+          <td colspan=2>Top Immigration</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+        </tr>
+      </table>
+
+    </div>
+
+    <script>
+      // Initialize the map: set center and zoom level
+      var map = L.map('map', {
+        zoomControl: false,
+        scrollWheelZoom: false,
+      });
+      map.keyboard.disable();
+
+      map.createPane('provinces');
+      map.getPane('provinces').style.zIndex = 300;
+
+      L.control.zoom({
+        position:'topright'
+      }).addTo(map);
+
+      // Add basemap tiles
+      var basemap = new L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+      }).addTo(map);
+
+      // Load data
+      var data = {};
+      var geoJsonLayer;
+
+      $.ajax({
+        url: '../data/dataset.csv',
+        dataType: 'text',
+        async: false,
+
+        success: function(csvd) {
+          csvd = $.csv.toObjects(csvd);
+          for (i in csvd) {
+            data[csvd[i].Province] = csvd[i];
+          }
+
+          for (i in data) {
+            sortedTo = [];
+            sortedFrom = [];
+
+            for (j in data[i]) {
+              if (j != 'Latitude' && j != 'Longitude' && parseInt(data[i][j])) {
+                data[i][j] = parseInt(data[i][j]);
+
+                if (j.indexOf('From ') == 0) {
+                  sortedFrom.push([data[i][j], j]);
+                } else if (j.indexOf('To ') == 0) {
+                  sortedTo.push([data[i][j], j]);
+                }
+
+              }
+            }
+
+            sortedTo.sort(function(a, b) { return b[0] - a[0] });
+            sortedFrom.sort(function(a, b) { return b[0] - a[0] });
+
+            data[i]['sortedTo'] = sortedTo;
+            data[i]['sortedFrom'] = sortedFrom;
+          }
+        },
+
+        complete: function () {
+          $.getJSON('../geojson/china-simplified.geojson', function(geojson) {
+            var geoJsonLayer = L.geoJson(geojson, {
+              pane: 'provinces',
+              style: function() {
+                return {
+                  fillColor: '#222',
+                  weight: 1,
+                  opacity: 1,
+                  color: 'white',
+                  fillOpacity: 1
+                };
+              }
+            }).addTo(map);
+
+            map.fitBounds(geoJsonLayer.getBounds());
+
+            addCurves();
+          });
+        }
+      });
+
+      function addCurves() {
+        var geoJsonFeatureCollection = {
+          'type': 'FeatureCollection',
+          'features': [],
+        };
+
+
+        for (i in data) {
+          for (j in data) {
+            if (i === j) continue;
+
+            geoJsonFeatureCollection.features.push({
+              "type": "Feature",
+              "geometry": {
+                "type": "Point",
+                "coordinates": [data[i].Latitude, data[i].Longitude]
+              },
+              "properties": {
+                "origin_id": i,
+                "origin_lon": data[i].Longitude,
+                "origin_lat": data[i].Latitude,
+                "destination_id": j,
+                "destination_lon": parseFloat(data[j].Longitude) + 0.5,
+                "destination_lat": data[j].Latitude,
+                'emigration': data[i]['To ' + j],
+              }
+            });
+          }
+        }
+
+        breaks = [];
+
+
+        // different thinkness of up to 1M people. More = same width for all (10px)
+        for (var i = 0; i < 100; i++) {
+          breaks.push({
+            classMinValue: 10000*i,
+            classMaxValue: 10000*(i+1)-1,
+            symbol: {
+              strokeStyle: 'red',
+              lineWidth: i / 10.0,
+              lineCap: 'round',
+              lineOpacity: '0.8',
+              shadowColor: 'red',
+              shadowBlur: 1.5
+            }
+          })
+        }
+
+        var oneToMany = L.canvasFlowmapLayer(geoJsonFeatureCollection, {
+          originAndDestinationFieldIds: {
+            originUniqueIdField: 'origin_id',
+            originGeometry: {
+              x: 'origin_lon',
+              y: 'origin_lat'
+            },
+            destinationUniqueIdField: 'destination_id',
+            destinationGeometry: {
+              x: 'destination_lon',
+              y: 'destination_lat'
+            }
+          },
+          pathDisplayMode: 'selection',
+
+          canvasBezierStyle: {
+            type: 'classBreaks',
+            field: 'emigration',
+            classBreakInfos: breaks,
+            defaultSymbol: {
+              strokeStyle: 'red',
+              lineWidth: 10.0,
+              lineCap: 'round',
+              lineOpacity: '0.8',
+              shadowColor: 'red',
+              shadowBlur: 1.5
+            }
+          },
+
+          style: function(e) {
+            var color = e.properties.isOrigin ? 'white' : '#666';
+            return {
+              radius: 8,
+              weight: 1,
+              color: color,
+              fillColor: color,
+              fillOpacity: 1
+            }
+          },
+
+          animationStarted: true,
+          animationEasingFamily: 'Linear',
+          animationEasingType: 'None',
+          animationDuration: 2000,
+        }).addTo(map);
+
+
+        function updateInfo(province) {
+          $('h2.province').text(province);
+
+          var top5 = ['', '', '', '']
+
+          for (var i = 0; i < 5; i++) {
+            top5[0] += data[province]['sortedTo'][i][1] + '<br>';
+            top5[1] += comma(data[province]['sortedTo'][i][0]) + '<br>';
+            top5[2] += data[province]['sortedFrom'][i][1] + '<br>';
+            top5[3] += comma(data[province]['sortedFrom'][i][0]) + '<br>';
+          }
+
+          $('#info .top-emigration tr:nth-child(2n) td:first-child').html(top5[0]);
+          $('#info .top-emigration tr:nth-child(2n) td:nth-child(2n)').html(top5[1]);
+          $('#info .top-immigration tr:nth-child(2n) td:first-child').html(top5[2]);
+          $('#info .top-immigration tr:nth-child(2n) td:nth-child(2n)').html(top5[3]);
+        }
+
+        oneToMany.on('mouseover click', function(e) {
+          var province = e.isOriginFeature
+            ? e.sourceTarget.feature.properties.origin_id
+            : e.sourceTarget.feature.properties.destination_id;
+
+          updateInfo(province);
+
+          if (e.sharedOriginFeatures.length) {
+            oneToMany.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+          }
+          if (e.sharedDestinationFeatures.length) {
+            oneToMany.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+          }
+        });
+
+        oneToMany.selectFeaturesForPathDisplayById('origin_id', 'Beijing', false, 'SELECTION_NEW');
+        updateInfo('Beijing');
+      }
+
+      // Use in info.update if GeoJSON data needs to be displayed with commas (such as 123,456)
+      function comma(val) {
+        while (/(\d+)(\d{3})/.test(val.toString())){
+          val = val.toString().replace(/(\d+)(\d{3})/, '$1'+','+'$2');
+        }
+        return val;
+      }
+
+    </script>
+  </body>
+</html>

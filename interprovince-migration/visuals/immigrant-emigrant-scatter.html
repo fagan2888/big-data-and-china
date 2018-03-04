@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Immigration vs Emigration by Province</title>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/0.8.3/jquery.csv.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/6.0.3/highcharts.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highcharts/6.0.3/css/highcharts.css" />
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-size: 14px;
+        font-family: Arial;
+        background: rgb(248, 249, 250);
+      }
+      #container {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+      }
+
+      @media screen and (max-height: 470px){
+        .data-explained-label {
+          display: none;
+        }
+      }
+
+      .highcharts-background {
+        fill: rgb(248, 249, 250);
+      }
+      .highcharts-grid-line {
+        stroke: rgb(248, 249, 250);
+      }
+
+    </style>
+  </head>
+
+
+  <body>
+
+    <div id="container"></div>
+
+    <script>
+
+    function comma(val) {
+      while (/(\d+)(\d{3})/.test(val.toString())){
+        val = val.toString().replace(/(\d+)(\d{3})/, '$1'+','+'$2');
+      }
+      return val;
+    }
+
+    var data = {};
+    var series = [];
+
+    $.ajax({
+      url: '../data/dataset.csv',
+      async: false,
+      success: function(csvd) {
+        var csvd = $.csv.toObjects(csvd);
+        for (i in csvd) {
+          data[csvd[i].Province] = csvd[i];
+        }
+
+        for (i in data) {
+          series.push({
+            x: parseInt(data[i]['Immigration']),
+            y: parseInt(data[i]['Emigration']),
+            province: i
+          });
+        }
+
+        Highcharts.chart('container', {
+          credits: {
+            enabled: false,
+          },
+
+          chart: {
+            type: 'scatter',
+            zoomType: 'xy',
+          },
+
+          title: {
+            text: 'Interprovince Migration in China'
+          },
+
+          subtitle: {
+            text: 'Source: China Census 2010'
+          },
+
+          xAxis: {
+            title: {
+              text: 'Total Number of Immigrants'
+            },
+            min: 0,
+            max: 22000000,
+            tickLength: 0,
+          },
+
+          yAxis: {
+            title: {
+              text: 'Total Number of Emigrants'
+            },
+            gridLineWidth: -1,
+            min: 0,
+            max: 22000000,
+          },
+
+          legend: {
+            enabled: false,
+            layout: 'vertical',
+            align: 'left',
+            verticalAlign: 'top',
+            x: 100,
+            y: 70,
+            floating: true,
+          },
+
+          plotOptions: {
+            scatter: {
+              pointStart: 0,
+              marker: {
+                radius: 5,
+              }
+            },
+          },
+
+          tooltip: {
+            formatter: function() {
+              return '<b>' + this.point.province + '</b><br>'
+                + 'Immigrants: ' + comma(this.x) + '<br>Emigrants: ' + comma(this.y);
+            }
+          },
+
+          series: [{
+            type: 'line',
+            data: [[0, 0], [22000000, 22000000]],
+            showInLegend: false,
+            color: '#ccc',
+            marker: {
+              enabled: false
+            },
+            enableMouseTracking: false
+          }, {
+            data: series,
+            color: 'black',
+            marker: {
+              symbol: 'circle',
+            }
+          }],
+
+        });
+      },
+
+      dataType: 'text',
+    });
+
+    </script>
+
+  </body>
+</html>

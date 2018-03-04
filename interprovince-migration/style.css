@@ -1,0 +1,87 @@
+header {
+  padding: 150px 0 100px;
+}
+
+.bg-blue {
+  background-color: #002147; /* Oxford Blue */
+}
+
+.color-blue {
+  color: #002147; /* Oxford Blue */
+}
+
+sup.def a {
+  color: #000;
+  text-decoration: none;
+}
+
+
+/* to make sure anchors are not covered by header */
+ol li {
+  padding-top: 60px;
+  margin-top: -60px;
+}
+
+@media (min-width: 992px) {
+  header {
+    padding: 156px 0 100px;
+  }
+}
+
+section {
+  padding: 50px 0;
+}
+
+#data-by-town {
+  padding-bottom: 0;
+}
+
+.logo {
+  height: 45px;
+  margin-right: 20px;
+}
+
+.full-screen {
+  width: 100vw;
+  height: calc(100vh - 56px);
+  margin: 25px 0;
+}
+
+
+iframe {
+  border: 0;
+  margin: 20px 0;
+}
+
+.iframe-container-square {
+  position: relative;
+  padding-bottom: 100%;
+  overflow: hidden;
+}
+
+.iframe-container-square iframe {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.bg-red {
+  background-color: #de2910;
+}
+
+.bg-flag {
+  background-image: url(flag.png);
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
+#dataset_wrapper {
+  font-size: 0.8em;
+  cursor: ew-resize;
+}
+
+#dataset td, #dataset_wrapper th {
+  min-width: 120px;
+  padding: 1px 5px;
+  background: #FFD7D7;
+}

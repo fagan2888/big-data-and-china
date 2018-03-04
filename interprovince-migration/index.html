@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>China Interprovince Migration</title>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+    <link href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/0.8.3/jquery.csv.js"></script>
+
+    <link href="style.css" rel="stylesheet">
+
+  </head>
+
+  <body id="page-top">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-red fixed-top" id="mainNav">
+      <div class="container">
+        <a class="navbar-brand js-scroll-trigger d-block" href="https://ilyankou.github.io">ILYA ILYANKOU</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#about">About Data</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#part1">Total Migration</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#part2">Net Migration</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#part3">Flow Map</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <header class="text-white bg-red bg-flag">
+      <div class="container text-center">
+        <h1>China Interprovince Migration</h1>
+        <p class="lead">
+          Big Data & China &bull; Assignment 1
+        </p>
+      </div>
+    </header>
+
+    <section id="about">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <h2>About the Dataset</h2>
+
+            <p>
+              For the assignment, we were given two small datasets from China Census 2010.
+              The first one contained population by province; the second one
+              was a 31&times;93 matrix that contained interprovince migration numbers.
+              Both datasets contained male, female, and total values.
+            </p>
+
+            <p>
+              China Census defines interprovince migrants as "people whose place
+              of residence doesn't comply with the place of Hukou registration;
+              or people who have been away from their place of Hukou registration
+              for more than half a year".
+            </p>
+
+            <p>
+              I decided to focus on total population and removed male and female data.
+              To be able to perform visualizations, I geocoded the capitals of all
+              provinces. I also assigned each province to either Western, Central, or
+              Eastern part of China.
+            </p>
+
+            <p>
+              The final dataset can be seen in the table below (and downloaded
+              <a href="data/dataset.csv">here</a>).
+              It contains a distance matrix of migration and its transpose.
+              It is redundant, but doing so made it much easier to handle numbers in JavaScript.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <table id="dataset"></table>
+
+    <section id="part1" class="bg-light">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <h2>Total Migration</h2>
+
+            <p>
+              The first question that came to my mind was: <b>What are the
+              provinces with highest and lowest number of immigrants?</b> To answer this,
+              I simply summed up all entires across all rows and columns
+              to get the total emigration (residents of the province residing in
+              other provinces) and immigration (residents of other provinces
+              residing in the province) figures.
+            </p>
+
+            <p>
+              The scatterplot below shows the total number of immigrants on an x-axis
+              and the total number of emigrants on a y-axis. The diagonal line represents
+              <i>y = x</i> function. That is, provinces under this line have more
+              immigrants than emigrants, which implies their better social and economic
+              environment. In the provinces above the line, emigration exceeds
+              immigration.
+            </p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-10 mx-auto text-center">
+            <iframe src="visuals/immigrant-emigrant-scatter.html"
+              style="width: 600px; height: 600px;">
+            </iframe>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <p>
+              Of 31 provinces, 14 have immigration exceeding emigration. Among those provinces
+              are Guangdong with a record of 21.5 million immigrants and only 880,000 emigrants,
+              followed by Zheijang, Shanghai, Jiangsu, and Beijing.
+            </p>
+
+            <p>
+              Among the most "emigrating" provinces, there are
+              Anhui with a record of 9.6 million emigrants and only 717,000 immigrants,
+              along with Sichuan, Hunan, Hubei, and Jiangxi.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <section id="part2">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <h2>Net Migration</h2>
+
+            <p>
+              I calculated net migration per 1000 inhabitants for each province
+              using the formula:
+            </p>
+
+            <p class="lead text-center">(I - E) % P &times; 1000</p>
+
+            <p>
+              Here, <b>I</b> is the total immigration to the province, <b>E</b> is the total
+              emigration from the province, and <b>P</b> is the total population of the province.
+            </p>
+
+            <p>
+              This is not to be confused with total migration rate, which is
+              calculated annually based on the mid-year population and the number
+              of immigrants and emigrants that moved in that year.
+              The net migration value is the number of immigrants from other provinces per
+              1000 people who migrated in the past, not necessarily in that year.
+            </p>
+
+            <p>
+              Positive value (above 0) implies that
+              a province experiences an influx of immigrants. Negative value
+              means more people emigrate from a province.
+              Net migration values for each province can be seen on the map below.
+            </p>
+
+          </div>
+        </div>
+
+
+        <div class="row">
+          <div class="col-lg-10 mx-auto">
+            <iframe src="visuals/net-migration-map.html"
+              style="width: 100%; height: 600px;">
+            </iframe>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <p>
+              Of 31 provinces, 14 have positive net migration values, which is
+              consistent with the previous scatterplot.
+            </p>
+
+            <p>
+              Most Eastern provinces experience a greatly positive net migration, with
+              Shanghai and Beijing in the leaders. The only four Eastern provinces
+              with negative net migration are Heilongjiang and Jilin in the north-east,
+              as well as Shandong and Hebei. One of the reasons of negative net migration
+              for the latter two might be their proximity to Beijing and Tianjin, the two
+              successful Chinese metropolises with more jobs and opportunities.
+            </p>
+
+            <p>
+              Quite surprisingly, the worst net migration is seen in Central, not Western provinces.
+              Anhui and Jiangxi have net migration values below -100. In contrast,
+              Tibet, Xinjiang, and Qinghai &ndash; the three westmost provinces of China &ndash;
+              along with Inner Mongolia in the North all have positive migration trends.
+            </p>
+
+            <p>
+              I plotted the same dataset using a sorted bar chart,
+              where each bar represents a net migration
+              value of a province, and is colored in either blue (<span style="background:#8da0cb">Eastern</span>),
+              green (<span style="background:#66c2a5">Western</span>), or orange (<span style="background:#fc8d62">Central</span>). It is easy to spot that
+              most Eastern provinces are clustered to the left (highest net migration),
+              and all 6 Central provinces are to the right, with negative net
+              migration values.
+            </p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-12 mx-auto">
+            <iframe src="visuals/net-migration-bar.html"
+              style="width: 100%; height: 400px;">
+            </iframe>
+          </div>
+        </div>
+
+
+      </div>
+    </section>
+
+    <section id="part3" class="bg-light">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <h2>Flow Map</h2>
+
+            <p>
+              To visualize the entire migration flows, I used a flow map.
+              Each province has two circles near their capitals: white (emigration) and grey (immigration).
+              By hovering over a circles, one can see all origins or destinations
+              of migrants for that province. The thickness of the red lines corresponds to the number
+              of migrants: the thicker the line is, the more people move. In the upper
+              left corner of the map, one can see the top-5 migrant origins and destinations
+              for selected province.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <iframe src="visuals/flow-map.html" class="full-screen"
+      style="margin: 0; margin-bottom: -6px;">
+    </iframe>
+
+
+    <!-- Footer -->
+    <footer class="py-5 bg-red">
+      <div class="container">
+        <p class="m-0 text-center text-white">
+          Trinity College, CT<br>
+          February 29, 2018
+        </p>
+      </div>
+    </footer>
+
+    <!-- Custom JavaScript for this theme -->
+    <script src="scrolling-nav.js"></script>
+
+    <!-- Load data in DataTables -->
+    <script>
+      $(document).ready(function(){
+        $.ajax({
+          type: "GET",
+          url: "data/dataset.csv",
+          dataType: "text",
+          success: function(data) {
+            data = $.csv.toArrays(data);
+
+            var headers = data.shift().map(function(x) {return {'title': x}});
+
+            $('#dataset').DataTable({
+              columns: headers,
+              data: data,
+              paging: false,
+              info: false,
+              searching: false,
+              ordering: false,
+              scrollX: true,
+            });
+          }
+         });
+      });
+    </script>
+
+  </body>
+
+</html>
